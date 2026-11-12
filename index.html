@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -419,8 +420,8 @@ body{
  <div id="redSub">UNKNOWN PROCESS DETECTED</div>
 </section>
 
-<audio id="music" loop preload="none">
- <source src="sr20det.mp3" type="audio/mpeg">
+<audio id="music" loop preload="auto">
+ <source src="./sr20det.mp3" type="audio/mpeg">
 </audio>
 
 <script>
@@ -445,11 +446,16 @@ let opened=false;
 document.getElementById("envelopeBtn").onclick=()=>{
  if(opened)return;
  opened=true;
+
+ /* ЗАПУСК МУЗЫКИ СРАЗУ ПО НАЖАТИЮ */
+ music.play().catch(error=>{
+  console.log("Музыка не запустилась:",error);
+ });
+
  document.getElementById("envelopeBtn").classList.add("open");
 
  setTimeout(()=>{
   show("loading");
-  music.play().catch(()=>{});
   startLoading();
  },750);
 };
