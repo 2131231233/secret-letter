@@ -1,1 +1,585 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNKNOWN SYSTEM</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#000;color:white;
+ font-family:"Courier New",monospace;overflow:hidden
+}
+.screen{
+ position:fixed;inset:0;display:none;
+ align-items:center;justify-content:center
+}
+.screen.active{display:flex}
+
+/* ПЕРВЫЙ ЭКРАН */
+#intro{
+ background:radial-gradient(ellipse at center,#351027,#080308 75%);
+ flex-direction:column;gap:28px
+}
+.intro-title{
+ font-size:clamp(22px,4vw,38px);
+ letter-spacing:4px;text-align:center;
+ text-shadow:0 0 20px #c02c75
+}
+.intro-input{
+ width:min(330px,85vw);padding:16px;
+ border:1px solid #a64b75;border-radius:5px;
+ background:#100910;color:white;
+ font:17px monospace;text-align:center;
+ box-shadow:0 0 20px #5b153b
+}
+.continue{
+ padding:14px 35px;border:1px solid #d66b9b;
+ border-radius:30px;
+ background:linear-gradient(120deg,#55132f,#a52b59);
+ color:white;font-size:16px;letter-spacing:2px;
+ box-shadow:0 0 20px #8b174b;transition:.3s
+}
+.continue:hover{transform:scale(1.06);box-shadow:0 0 35px #e33b85}
+
+/* КОНВЕРТ */
+#envelope{
+ background:radial-gradient(ellipse at center,#270d20,#050205 75%);
+ flex-direction:column;gap:30px
+}
+.envelope-wrap{
+ position:relative;width:290px;height:205px;
+ filter:drop-shadow(0 18px 22px #000);
+ cursor:pointer;transition:.3s
+}
+.envelope-wrap:hover{transform:translateY(-5px)}
+.envelope-back{
+ position:absolute;inset:0;
+ background:linear-gradient(145deg,#eee,#bdbdc4);
+ border-radius:5px
+}
+.envelope-paper{
+ position:absolute;left:18px;right:18px;
+ top:12px;height:160px;background:#fff;
+ box-shadow:0 0 12px #0005;transition:.6s;z-index:1
+}
+.envelope-front{
+ position:absolute;inset:0;
+ background:linear-gradient(145deg,#e9e9ed,#c9c9d0);
+ clip-path:polygon(0 0,50% 55%,100% 0,100% 100%,0 100%);
+ z-index:3
+}
+.envelope-left{
+ position:absolute;inset:0;
+ background:linear-gradient(45deg,#d2d2d9,#f5f5f5);
+ clip-path:polygon(0 0,50% 55%,0 100%);z-index:4
+}
+.envelope-right{
+ position:absolute;inset:0;
+ background:linear-gradient(135deg,#f5f5f5,#c7c7ce);
+ clip-path:polygon(100% 0,50% 55%,100% 100%);z-index:4
+}
+.envelope-flap{
+ position:absolute;inset:0;
+ background:linear-gradient(160deg,#fff,#c5c5cc);
+ clip-path:polygon(0 0,100% 0,50% 57%);
+ z-index:5;transform-origin:top;transition:transform .7s
+}
+.seal{
+ position:absolute;z-index:6;left:50%;top:51%;
+ transform:translate(-50%,-50%);
+ width:49px;height:49px;border-radius:50%;
+ background:radial-gradient(circle at 35% 30%,#ff7b9c,#a00036 70%);
+ box-shadow:0 3px 10px #550019;
+ display:flex;align-items:center;justify-content:center;
+ color:#fff;font-size:27px
+}
+.envelope-wrap.open .envelope-flap{transform:rotateX(180deg)}
+.envelope-wrap.open .envelope-paper{transform:translateY(-95px)}
+.open-text{
+ font-size:13px;letter-spacing:3px;color:#f4c1d7;
+ text-shadow:0 0 12px #d32d79;animation:pulse 1.5s infinite
+}
+@keyframes pulse{50%{opacity:.4}}
+
+/* ЗАГРУЗКА */
+#loading{
+ background:#000;overflow:hidden;
+ align-items:flex-start;justify-content:flex-start
+}
+#logs{
+ position:absolute;top:15px;left:15px;right:15px;bottom:65px;
+ color:#aaa;font-size:13px;line-height:1.5;
+ overflow:hidden;overflow-wrap:anywhere;
+}
+#logs div{animation:logAppear .25s ease-out}
+@keyframes logAppear{
+ from{opacity:0;transform:translateX(-8px)}
+ to{opacity:1;transform:translateX(0)}
+}
+#progress{
+ position:absolute;bottom:30px;left:5%;
+ width:90%;height:5px;background:#222
+}
+#bar{height:100%;width:0;background:#b00038}
+#percent{position:absolute;bottom:42px;right:5%;color:white}
+
+/* ГЛАЗ ИЗ ТОЧЕК */
+#dotEye{
+ position:absolute;
+ top:18px;
+ right:22px;
+ width:76px;
+ height:43px;
+ opacity:.8;
+ filter:drop-shadow(0 0 7px #aaa);
+ animation:dotEyePulse 2s infinite alternate;
+}
+#dotEye svg{width:100%;height:100%}
+@keyframes dotEyePulse{
+ from{opacity:.45}
+ to{opacity:1}
+}
+
+/* ГЛАЗ */
+#eyeScreen{
+ background:#000;flex-direction:column;gap:28px
+}
+.eye-errors{
+ position:absolute;top:15px;left:15px;right:15px;
+ color:#aaa;font-size:12px;line-height:1.6;
+ overflow:hidden;max-height:120px
+}
+.eye{
+ width:min(340px,75vw);height:170px;
+ position:relative;display:flex;
+ align-items:center;justify-content:center
+}
+.eye-shape{
+ position:absolute;inset:8px 0;
+ border:4px solid #aaa;border-radius:70% 15%;
+ background:radial-gradient(ellipse,#222,#080808 70%);
+ box-shadow:0 0 22px #777,inset 0 0 18px #777;
+ clip-path:ellipse(50% 48% at 50% 50%)
+}
+.iris{
+ width:100px;height:100px;border-radius:50%;
+ background:repeating-conic-gradient(from 0deg,#555 0deg,#bbb 5deg,#333 10deg);
+ border:4px solid #aaa;position:relative;z-index:2;
+ box-shadow:0 0 20px #aaa
+}
+.pupil{
+ position:absolute;width:47px;height:65px;
+ border-radius:50%;background:#000;
+ left:50%;top:50%;transform:translate(-50%,-50%)
+}
+.pupil:after{
+ content:"";position:absolute;width:14px;height:14px;
+ background:white;border-radius:50%;
+ top:10px;left:10px;box-shadow:0 0 10px white
+}
+#eyeText{
+ font:bold clamp(32px,7vw,65px) Impact,sans-serif;
+ letter-spacing:5px;text-align:center;
+ color:white;text-shadow:0 0 18px #aaa
+}
+#eyeScreen.glitch{animation:eyeGlitch .7s steps(1,end) infinite}
+#eyeScreen.glitch #eyeText{animation:eyeTextGlitch .7s steps(1,end) infinite}
+@keyframes eyeGlitch{
+ 0%,100%{background:#000}
+ 50%{background:#500000}
+}
+@keyframes eyeTextGlitch{
+ 0%,100%{color:#b00000}
+ 50%{color:#080808}
+}
+
+/* СИНИЙ ЭКРАН */
+#blue{
+ background:#0000AA;padding:45px 3vw;
+ justify-content:space-between;
+ animation:blueBlink 1.2s infinite
+}
+@keyframes blueBlink{
+ 0%,100%{background:#0000AA}
+ 50%{background:#080018}
+}
+#errors{
+ position:absolute;top:55px;left:15px;bottom:15px;
+ width:31%;overflow:hidden;pointer-events:none;
+ text-align:left;font-size:12px;line-height:1.55;
+ overflow-wrap:anywhere
+}
+.err{
+ color:#a00000;
+ animation:errBlink .5s infinite alternate
+}
+@keyframes errBlink{
+ from{color:#080000}
+ to{color:#b00000}
+}
+.system-title{
+ position:absolute;top:15px;left:15px;
+ color:white;font-weight:bold;font-size:17px;
+ letter-spacing:2px;
+ animation:titleBlink .8s infinite alternate
+}
+@keyframes titleBlink{
+ from{color:#fff;text-shadow:0 0 5px white}
+ to{color:#a00000;text-shadow:0 0 12px red}
+}
+.frame{
+ position:relative;z-index:2;
+ border:5px double white;
+ width:min(700px,62vw);
+ padding:30px 25px;background:#0000AA;
+ margin-left:auto;margin-right:2vw
+}
+.badge{
+ position:absolute;top:-17px;left:50%;
+ transform:translateX(-50%);
+ background:white;color:black;
+ padding:5px 15px;font-weight:bold;white-space:nowrap
+}
+.frame p{line-height:1.65;font-size:15px}
+#codeInput{
+ display:block;margin:12px auto 0;
+ background:white;color:black;width:min(350px,90%);
+ border:2px solid #555;padding:12px;font:17px monospace
+}
+.footer{
+ display:flex;justify-content:space-between;
+ font-size:11px;margin-top:20px
+}
+
+/* ОШИБКА ПАРОЛЯ */
+#wrong{
+ position:fixed;z-index:10;inset:0;
+ display:none;align-items:center;justify-content:center;
+ background:#0009
+}
+#wrong.show{display:flex}
+.wrongBox{
+ background:#c0c0c0;color:#000;
+ border:3px outset white;width:min(390px,90vw);
+ padding:5px;font-family:"Courier New",monospace
+}
+.wrongHead{
+ background:#000080;color:white;padding:7px;font-weight:bold
+}
+.wrongBody{
+ text-align:center;padding:25px 12px;
+ font-weight:bold;font-size:17px
+}
+.wrongBox button{
+ color:#000;border:2px outset white;
+ background:#ddd;padding:7px 30px
+}
+
+/* ФИНАЛ */
+#red{
+ background:#080000;flex-direction:column;gap:20px;
+ animation:finalGlitch .7s steps(1,end) infinite
+}
+#redText{
+ font-size:clamp(25px,6vw,55px);
+ color:#a00000;text-align:center;letter-spacing:4px;
+ animation:finalText .7s steps(1,end) infinite
+}
+#redSub{font-size:14px;color:#a00000}
+@keyframes finalGlitch{
+ 0%,100%{background:#080000}
+ 50%{background:#790000}
+}
+@keyframes finalText{
+ 0%,100%{color:#a00000}
+ 50%{color:#080808}
+}
+@media(max-width:700px){
+ #blue{justify-content:center;padding:25px 10px}
+ #errors{width:100%;opacity:.35}
+ .frame{width:94vw;margin:0}
+ .system-title{font-size:13px}
+ .frame p{font-size:12px}
+ .badge{font-size:11px}
+}
+</style>
+</head>
+
+<body>
+
+<section id="intro" class="screen active">
+ <div class="intro-title">ГДЕ МЫ ВСТРЕТИЛИСЬ?</div>
+ <input class="intro-input" id="answer" placeholder="Твой ответ...">
+ <button class="continue" id="continueBtn">ПРОДОЛЖИТЬ ♥</button>
+</section>
+
+<section id="envelope" class="screen">
+ <div class="envelope-wrap" id="envelopeBtn">
+  <div class="envelope-back"></div>
+  <div class="envelope-paper"></div>
+  <div class="envelope-front"></div>
+  <div class="envelope-left"></div>
+  <div class="envelope-right"></div>
+  <div class="envelope-flap"></div>
+  <div class="seal">♥</div>
+ </div>
+ <div class="open-text">НАЖМИ, ЧТОБЫ ОТКРЫТЬ</div>
+</section>
+
+<section id="loading" class="screen">
+ <div id="dotEye">
+  <svg viewBox="0 0 100 55" xmlns="http://www.w3.org/2000/svg">
+   <g fill="#ddd">
+    <circle cx="8" cy="27" r="2"/>
+    <circle cx="15" cy="20" r="2"/>
+    <circle cx="23" cy="14" r="2"/>
+    <circle cx="32" cy="9" r="2"/>
+    <circle cx="42" cy="6" r="2"/>
+    <circle cx="50" cy="5" r="2"/>
+    <circle cx="58" cy="6" r="2"/>
+    <circle cx="68" cy="9" r="2"/>
+    <circle cx="77" cy="14" r="2"/>
+    <circle cx="85" cy="20" r="2"/>
+    <circle cx="92" cy="27" r="2"/>
+    <circle cx="85" cy="34" r="2"/>
+    <circle cx="77" cy="40" r="2"/>
+    <circle cx="68" cy="45" r="2"/>
+    <circle cx="58" cy="48" r="2"/>
+    <circle cx="50" cy="49" r="2"/>
+    <circle cx="42" cy="48" r="2"/>
+    <circle cx="32" cy="45" r="2"/>
+    <circle cx="23" cy="40" r="2"/>
+    <circle cx="15" cy="34" r="2"/>
+   </g>
+   <g fill="#fff">
+    <circle cx="50" cy="27" r="11"/>
+    <circle cx="50" cy="27" r="6" fill="#000"/>
+    <circle cx="53" cy="24" r="2" fill="#fff"/>
+   </g>
+  </svg>
+ </div>
+ <div id="logs"></div>
+ <div id="percent">0%</div>
+ <div id="progress"><div id="bar"></div></div>
+</section>
+
+<section id="eyeScreen" class="screen">
+ <div class="eye-errors" id="eyeErrors"></div>
+ <div class="eye">
+  <div class="eye-shape"></div>
+  <div class="iris"><div class="pupil"></div></div>
+ </div>
+ <div id="eyeText">ВАС ЗАМЕТИЛИ</div>
+</section>
+
+<section id="blue" class="screen">
+ <div class="system-title">SYSTEM32 ERROR</div>
+ <div id="errors"></div>
+
+ <div class="frame">
+  <div class="badge">ВАШИ ФАЙЛЫ ЗАШИФРОВАНЫ!</div>
+  <p>
+   SYSTEM FAILURE DETECTED<br><br>
+   Обнаружена неизвестная активность.<br>
+   Системные процессы завершены.<br>
+   Виртуальная среда заблокирована.<br><br>
+   ERROR: SYSTEM32<br>
+   ERROR: KERNEL FAILURE<br>
+   ERROR: MEMORY ACCESS<br>
+   STATUS: 0x0000A71F
+  </p>
+
+  <center style="font-weight:bold;line-height:1.7">
+   УПС, ТЫ ДУМАЛ, ЧТО ТУТ БУДЕТ ЧТО-ТО??<br>
+   ХАХА, НЕТ. КАКОЙ ТЫ НАИВНЫЙ
+  </center>
+
+  <input id="codeInput" autocomplete="off">
+
+  <div class="footer">
+   <span>UNKNOWN SYSTEM / SIMULATION</span>
+   <span>ENTER [ВВОД]</span>
+  </div>
+ </div>
+</section>
+
+<div id="wrong">
+ <div class="wrongBox">
+  <div class="wrongHead">SYSTEM MESSAGE</div>
+  <div class="wrongBody">УПС, ПАРОЛЬ НЕВЕРНЫЙ :(((</div>
+  <center><button id="wrongOk">OK</button></center>
+ </div>
+</div>
+
+<section id="red" class="screen">
+ <div id="redText">SYSTEM FAILURE</div>
+ <div id="redSub">UNKNOWN PROCESS DETECTED</div>
+</section>
+
+<audio id="music" loop preload="none">
+ <source src="sr20det.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const ids=["intro","envelope","loading","eyeScreen","blue","red"];
+
+function show(id){
+ ids.forEach(x=>document.getElementById(x).classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+}
+
+/* ПЕРВЫЙ ЭКРАН */
+function nextEnvelope(){show("envelope")}
+document.getElementById("continueBtn").onclick=nextEnvelope;
+document.getElementById("answer").addEventListener("keydown",e=>{
+ if(e.key==="Enter")nextEnvelope();
+});
+
+/* КОНВЕРТ */
+const music=document.getElementById("music");
+let opened=false;
+
+document.getElementById("envelopeBtn").onclick=()=>{
+ if(opened)return;
+ opened=true;
+ document.getElementById("envelopeBtn").classList.add("open");
+
+ setTimeout(()=>{
+  show("loading");
+  music.play().catch(()=>{});
+  startLoading();
+ },750);
+};
+
+/* ЗАГРУЗКА */
+function startLoading(){
+ const logs=document.getElementById("logs");
+ const bar=document.getElementById("bar");
+ const percent=document.getElementById("percent");
+
+ let progress=0;
+
+ const types=[
+  "SYSTEM32 ERROR","KERNEL FAILURE","MEMORY ACCESS",
+  "UNKNOWN PROCESS","BOOT SECTOR ERROR","REGISTRY FAILURE",
+  "FILE SYSTEM ERROR","ACCESS DENIED","CRITICAL WARNING",
+  "DATA READ FAILURE","DRIVER ERROR","UNKNOWN SIGNAL"
+ ];
+
+ const timer=setInterval(()=>{
+  for(let i=0;i<5;i++){
+   const code=Math.floor(Math.random()*4294967295)
+    .toString(16).toUpperCase().padStart(8,"0");
+
+   const line=document.createElement("div");
+   line.textContent=
+    "["+new Date().toLocaleTimeString()+"] "+
+    types[Math.floor(Math.random()*types.length)]+" 0x"+code;
+
+   logs.appendChild(line);
+  }
+
+  while(logs.children.length>250){
+   logs.removeChild(logs.firstChild);
+  }
+
+  logs.scrollTop=logs.scrollHeight;
+
+  /* ЗАГРУЗКА УСКОРЕНА В 2 РАЗА */
+  progress=Math.min(100,progress+1+Math.random()*1);
+  bar.style.width=progress+"%";
+  percent.textContent=Math.floor(progress)+"%";
+
+  if(progress>=100){
+   clearInterval(timer);
+
+   setTimeout(()=>{
+    music.pause();
+    show("eyeScreen");
+    document.getElementById("eyeScreen").classList.add("glitch");
+    startEyeErrors();
+
+    setTimeout(()=>{
+     document.getElementById("eyeScreen").classList.remove("glitch");
+     show("blue");
+     startErrors();
+    },4500);
+   },700);
+  }
+ },130);
+}
+
+/* ОШИБКИ НА ЭКРАНЕ С ГЛАЗОМ */
+let eyeTimer;
+
+function startEyeErrors(){
+ const box=document.getElementById("eyeErrors");
+ const messages=[
+  "ERROR: UNKNOWN OBSERVER",
+  "WARNING: CONNECTION DETECTED",
+  "SYSTEM32: ACCESS DENIED",
+  "PROCESS: 0x0000A71F",
+  "MEMORY: UNKNOWN SIGNAL",
+  "ERROR: TRACKING FAILED"
+ ];
+
+ let i=0;
+ eyeTimer=setInterval(()=>{
+  const line=document.createElement("div");
+  line.textContent=messages[i%messages.length];
+  box.appendChild(line);
+  i++;
+  if(box.children.length>6)box.removeChild(box.firstChild);
+ },350);
+}
+
+/* БЕСКОНЕЧНЫЕ ОШИБКИ НА СИНЕМ ЭКРАНЕ */
+let errorTimer;
+
+function startErrors(){
+ const box=document.getElementById("errors");
+ if(errorTimer)clearInterval(errorTimer);
+
+ const types=[
+  "SYSTEM32","KERNEL","MEMORY","BOOT","SECTOR",
+  "REGISTRY","PROCESS","WINDOWS","DRIVER",
+  "CRITICAL FAILURE","ACCESS VIOLATION",
+  "UNKNOWN PROCESS","SYSTEM FAILURE",
+  "BOOT ERROR","MEMORY CORRUPTION","FILE SYSTEM"
+ ];
+
+ errorTimer=setInterval(()=>{
+  const line=document.createElement("div");
+  const code=Math.floor(Math.random()*4294967295)
+   .toString(16).toUpperCase().padStart(8,"0");
+
+  line.className="err";
+  line.textContent=
+   "ERROR: "+types[Math.floor(Math.random()*types.length)]+" 0x"+code;
+
+  box.appendChild(line);
+
+  if(box.children.length>300)box.removeChild(box.firstChild);
+ },65);
+}
+
+/* НЕВЕРНЫЙ ПАРОЛЬ */
+const wrong=document.getElementById("wrong");
+
+document.getElementById("codeInput").addEventListener("keydown",e=>{
+ if(e.key==="Enter")wrong.classList.add("show");
+});
+
+document.getElementById("wrongOk").onclick=()=>{
+ wrong.classList.remove("show");
+ document.getElementById("codeInput").value="";
+ document.getElementById("codeInput").focus();
+};
+</script>
+
+</body>
+</html>
+
